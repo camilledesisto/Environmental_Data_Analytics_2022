@@ -27,8 +27,15 @@ The completed exercise is due on Monday, February 28 at 7:00 pm.
 
 ```{r setup}
 #1
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(agricolae)
 
-
+ntl_dat <- read.csv("~/Documents/GitHub/Environmental_Data_Analytics_2022/Data/Raw/NTL-LTER_Lake_ChemistryPhysics_Raw.csv")
+ ntl_dat$sampledate <- as.Date(ntl_dat$sampledate, format = "%m/%d/%y") 
+ class(ntl_dat$sampledate)
+ ntl_dat <- as.data.frame(ntl_dat)
 #2
 
 
@@ -52,9 +59,17 @@ Ha:
 
 ```{r scatterplot}
 #4
+ntl_dat_wrangled <- ntl_dat %>% filter(month(sampledate)==07) %>%
+select(lakename:daynum, depth, temperature_C) %>% drop_na()
+
 
 
 #5
+temp_depth_plot <- ggplot(data=ntl_dat_wrangled, aes(x = depth, y = temperature_C))+ geom_point()+
+geom_smooth(method="lm")+
+ylim(0,35)+
+  ylab("Temperature (Degrees Celcius)")+
+  xlab("Depth")
 
 
 ```
@@ -70,7 +85,8 @@ Ha:
 ```{r linear.regression}
 #7
 
-
+temp_depth_lm <- lm(data= ntl_dat_wrangled, temperature_C ~ depth) 
+summary(temp_depth_lm)
 ```
 
 
@@ -92,10 +108,13 @@ Let's tackle a similar question from a different approach. Here, we want to expl
 ```{r temperature.model}
 #9
 
-
+temp_total_lm <- lm(data= ntl_dat_wrangled, temperature_C ~ year4 + daynum + depth) 
+step(temp_total_lm)
+AIC(step(temp_total_lm))
 
 #10
-
+temp_best_lm <- lm(data= ntl_dat_wrangled, temperature_C ~ daynum + depth +year4) 
+summary(temp_best_lm)
 
 ```
 
@@ -112,8 +131,11 @@ Let's tackle a similar question from a different approach. Here, we want to expl
 
 ```{r anova.model}
 #12
+temp_aov <- aov(data= ntl_dat_wrangled, temperature_C~lakename)
+summary(temp_aov)
 
-
+ temp_aov_lm <- lm(data= ntl_dat_wrangled, temperature_C~lakename) 
+ summary(temp_aov_lm)
 ```
 
 13. Is there a significant difference in mean temperature among the lakes? Report your findings. 
@@ -126,7 +148,12 @@ Let's tackle a similar question from a different approach. Here, we want to expl
 
 ```{r scatterplot.2}
 #14.
-
+aov_plot <- ggplot(data = ntl_dat_wrangled, aes(x = depth, y = temperature_C, color=lakename))+ geom_point(alpha=0.5)+
+geom_smooth(method="lm", se= FALSE)+
+ylim(0,35)+
+ylab("Temperature (Degrees Celcius)")+ xlab("Depth")+
+labs(color="Lake Name")
+print(aov_plot)
 
 ```
 
@@ -134,7 +161,7 @@ Let's tackle a similar question from a different approach. Here, we want to expl
 
 ```{r tukey.test}
 #15
-
+TukeyHSD(temp_aov)
 
 ```
 
